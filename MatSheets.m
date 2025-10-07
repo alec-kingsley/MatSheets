@@ -6,7 +6,8 @@ close all
 SPRITE_HEIGHT_PX = 16;
 SPRITE_WIDTH_PX = 12;
 SCALE = 1;
-SGE = simpleGameEngine("ascii-shrunk.png", SPRITE_HEIGHT_PX, SPRITE_WIDTH_PX, SCALE); 
+SGE = simpleGameEngine("ascii-shrunk.png", SPRITE_HEIGHT_PX, ...
+                       SPRITE_WIDTH_PX, SCALE); 
 
 % parameters
 ROW_CT = 12;
@@ -38,25 +39,47 @@ for i=1:WIDTH
     screen(HEIGHT, i) = '-';
 end
 
+TOP_LEFT_Y_POS = HEADER_HEIGHT + 3;
+TOP_LEFT_X_POS = ROW_LABEL_WIDTH + 3;
+
 % design screen
-screen(1:HEADER_HEIGHT, 1:WIDTH) = buildHeader(WIDTH, ROW_1_BUTTONS, ROW_2_BUTTONS);
-screen(HEADER_HEIGHT + 3:HEIGHT, 1 + ROW_LABEL_WIDTH + 2:WIDTH) = buildCells(ROW_CT, COL_CT, CELL_WIDTH);
-screen(HEADER_HEIGHT + 2:HEIGHT - 1, 2:2 + ROW_LABEL_WIDTH - 1) = buildRowLabels(ROW_CT, ROW_LABEL_WIDTH);
-screen(HEADER_HEIGHT + 1:HEADER_HEIGHT + 2, 1 + ROW_LABEL_WIDTH + 2:WIDTH - 1) = buildColLabels(COL_CT, CELL_WIDTH);
+screen(1:HEADER_HEIGHT, 1:WIDTH) ...
+    = buildHeader(WIDTH, ROW_1_BUTTONS, ROW_2_BUTTONS);
+screen(TOP_LEFT_Y_POS:HEIGHT, TOP_LEFT_X_POS:WIDTH) ...
+    = buildCells(ROW_CT, COL_CT, CELL_WIDTH);
+screen(HEADER_HEIGHT + 2:HEIGHT - 1, 2:2 + ROW_LABEL_WIDTH - 1) ...
+    = buildRowLabels(ROW_CT, ROW_LABEL_WIDTH);
+screen(HEADER_HEIGHT + 1:HEADER_HEIGHT + 2, ...
+       1 + ROW_LABEL_WIDTH + 2:WIDTH - 1) ...
+    = buildColLabels(COL_CT, CELL_WIDTH);
 
 SGE.drawScene(screen)
+
+% for scrolling capabilities
+top_left_row = 1;
+top_left_col = 1;
 
 exit_clicked = false;
 while ~exit_clicked
     [row, col, button] = SGE.getMouseInput();
-    button_clicked = get_header_button(row, col, ROW_1_BUTTONS, ROW_2_BUTTONS);
+    button_clicked = get_header_button(row, col, ROW_1_BUTTONS, ...
+                                       ROW_2_BUTTONS);
     if isempty(button_clicked)
-        fprintf("No header button clicked.\n")
+        % test if it's a cell
+        if mod(row - TOP_LEFT_Y_POS, 2) == 0 ...
+            && mod(col - TOP_LEFT_X_POS, CELL_WIDTH + 1) ~= CELL_WIDTH
+            cell_row = (row - TOP_LEFT_Y_POS) / 2 + 1;
+            cell_col = floor((col - TOP_LEFT_X_POS) / (CELL_WIDTH + 1)) + 1;
+            fprintf("Cell clicked: %c%d\n", 'A' + cell_col - 1, cell_row);
+        else
+            fprintf("Click target unknown.\n");
+        end
+
     else
         fprintf("Button clicked: %s\n", button_clicked)
         if strcmp(button_clicked, 'Exit') == 1
             exit_clicked = true;
-            close(SGE.my_figure)
+            close(SGE.my_figure);
         end
     end
 end
@@ -118,7 +141,9 @@ function col_labels = buildColLabels(col_ct, cell_width)
 
     col_label = 'A';
     for col=1:col_ct
-        col_labels(1, (col - 1) * (cell_width + 1) + ceil(cell_width / 2)) = col_label;
+        col_labels(1, (col - 1) * (cell_width + 1) ...
+                      + ceil(cell_width / 2)) ...
+            = col_label;
         col_label = col_label + 1;
     end
 
