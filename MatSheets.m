@@ -6,7 +6,7 @@ close all
 SPRITE_HEIGHT_PX = 16;
 SPRITE_WIDTH_PX = 12;
 SCALE = 1;
-SGE_object = simpleGameEngine("ascii-shrunk.png", SPRITE_HEIGHT_PX, SPRITE_WIDTH_PX, SCALE); 
+SGE = simpleGameEngine("ascii-shrunk.png", SPRITE_HEIGHT_PX, SPRITE_WIDTH_PX, SCALE); 
 
 % parameters
 ROW_CT = 12;
@@ -44,7 +44,57 @@ screen(HEADER_HEIGHT + 3:HEIGHT, 1 + ROW_LABEL_WIDTH + 2:WIDTH) = buildCells(ROW
 screen(HEADER_HEIGHT + 2:HEIGHT - 1, 2:2 + ROW_LABEL_WIDTH - 1) = buildRowLabels(ROW_CT, ROW_LABEL_WIDTH);
 screen(HEADER_HEIGHT + 1:HEADER_HEIGHT + 2, 1 + ROW_LABEL_WIDTH + 2:WIDTH - 1) = buildColLabels(COL_CT, CELL_WIDTH);
 
-drawScene(SGE_object, screen)
+SGE.drawScene(screen)
+
+exit_clicked = false;
+while ~exit_clicked
+    [row, col, button] = SGE.getMouseInput();
+    button_clicked = get_header_button(row, col, ROW_1_BUTTONS, ROW_2_BUTTONS);
+    if isempty(button_clicked)
+        fprintf("No header button clicked.\n")
+    else
+        fprintf("Button clicked: %s\n", button_clicked)
+        if strcmp(button_clicked, 'Exit') == 1
+            exit_clicked = true;
+            close(SGE.my_figure)
+        end
+    end
+end
+
+function button = get_header_button(row, col, row_1_buttons, row_2_buttons)
+    % Get header button at (row, col) as a character array,
+    % or return empty character array if header button not clicked.
+    % 
+    % Input:
+    %   1. row
+    %   2. column
+    % Output:
+    %   button - button at specified position
+
+    ROW_1 = 2;
+    ROW_2 = 4;
+
+    button = '';
+
+    if row == ROW_1
+        row_buttons = row_1_buttons;
+    elseif row == ROW_2
+        row_buttons = row_2_buttons;
+    else
+        row_buttons = {};
+    end
+    
+    i = length('| ') + 1;
+    for row_button=row_buttons
+        for c=row_button{1}
+            if i == col
+                button = row_button{1};
+            end
+            i = i + 1;
+        end
+        i = i + length(' | ');
+    end
+end
 
 function col_labels = buildColLabels(col_ct, cell_width)
     % Build labels for columns.
