@@ -72,16 +72,16 @@ while ~exit_clicked
                                        ROW_2_BUTTONS);
     if isempty(button_clicked)
         % test if it's a cell
-        if mod(row - TOP_LEFT_Y_POS, 2) == 0 ...
-            && mod(col - TOP_LEFT_X_POS, CELL_WIDTH + 1) ~= CELL_WIDTH ...
-            && row >= TOP_LEFT_Y_POS && col >= TOP_LEFT_X_POS
+        [cell_row, cell_col] = getCellPos(row, col, TOP_LEFT_Y_POS, ...
+                                          TOP_LEFT_X_POS, CELL_WIDTH);
 
-            cell_row = (row - TOP_LEFT_Y_POS) / 2 + 1;
-            cell_col = floor((col - TOP_LEFT_X_POS) ...
-                             / (CELL_WIDTH + 1)) + 1;
-            fprintf("Cell clicked: %c%d\n", 'A' + cell_col - 1, cell_row);
-        else
+        if cell_row == 0 && cell_col == 0
             fprintf("Click target unknown.\n");
+        else
+            fprintf("Cell clicked: %c%d\n", 'A' + cell_col - 1, cell_row);
+            old_value = DATA.getCellValue(cell_row, cell_col);
+            input_str = getInput(SGE, screen, 'Value', old_value, WIDTH);
+            DATA.setCellValue(cell_row, cell_col, input_str);
         end
 
     else
@@ -90,23 +90,75 @@ while ~exit_clicked
             exit_clicked = true;
             close(SGE.my_figure);
         elseif strcmp(button_clicked, 'Save As') == 1
-            input_str = getInput(SGE, screen, 'File name', WIDTH);
+            input_str = getInput(SGE, screen, 'File name', '', WIDTH);
             if ~isempty(input_str)
                 DATA.toCSV(input_str);
             end
         elseif strcmp(button_clicked, 'Load') == 1
-            input_str = getInput(SGE, screen, 'File name', WIDTH);
+            input_str = getInput(SGE, screen, 'File name', '', WIDTH);
             if ~isempty(input_str)
                 DATA.fromCSV(input_str);
             end
         elseif strcmp(button_clicked, 'New') == 1
             DATA.reset();
+        elseif strcmp(button_clicked, 'Copy') == 1
+            [cell_row, cell_col] = selectCell(SGE, TOP_LEFT_Y_POS, ...
+                                              TOP_LEFT_X_POS, CELL_WIDTH);
+            clipboard('copy', DATA.getCellValue(cell_row, cell_col));
+        elseif strcmp(button_clicked, 'Paste') == 1
+            [cell_row, cell_col] = selectCell(SGE, TOP_LEFT_Y_POS, ...
+                                              TOP_LEFT_X_POS, CELL_WIDTH);
+            DATA.setCellValue(cell_row, cell_col, clipboard('paste'));
         end
+
     end
 end
 
-function input_str = getInput(sge, screen, prompt, width)
-    % Get input from the user. Return an empty char array
+function [cell_row, cell_col] = selectCell(sge, top_left_y_pos, ...
+                                           top_left_x_pos, cell_width)
+    % Force user to select a cell and return its position.
+    %
+    % Input:
+    %   1. the SGE object
+    %   2. the y offset of the top left character
+    %   3. the x offset of the top left character
+    %   4. the width of a cell
+
+    cell_row = 0;
+    cell_col = 0;
+    while cell_row == 0 && cell_col == 0
+        [row, col, button] = sge.getMouseInput();
+        [cell_row, cell_col] = getCellPos(row, col, top_left_y_pos, ...
+                                          top_left_x_pos, cell_width);
+    end
+end
+
+function [cell_row, cell_col] = getCellPos(row, col, top_left_y_pos, ...
+                                           top_left_x_pos, cell_width)
+    % Get the cell row and column clicked from the cursor position
+    %
+    % Input:
+    %   1. the row of the character clicked
+    %   2. the row of the character clicked
+    %   3. the y offset of the top left character
+    %   4. the x offset of the top left character
+    %   5. the width of a cell
+                                         
+    cell_row = 0;
+    cell_col = 0;
+
+    if mod(row - top_left_y_pos, 2) == 0 ...
+        && mod(col - top_left_x_pos, cell_width + 1) ~= cell_width ...
+        && row >= top_left_y_pos && col >= top_left_x_pos
+
+        cell_row = (row - top_left_y_pos) / 2 + 1;
+        cell_col = floor((col - top_left_x_pos) ...
+                         / (cell_width + 1)) + 1;
+    end
+end
+
+function input_str = getInput(sge, screen, prompt, default, width)
+    % Get input from the user. Return `default`
     % if the user presses `esc`.
     %
     % Input:
@@ -115,9 +167,9 @@ function input_str = getInput(sge, screen, prompt, width)
     %   3. the prompt to give the user
     %   4. the width of the screen
 
-    printTextBox(sge, screen, [prompt ': '], width);
+    printTextBox(sge, screen, [prompt ': ' default], width);
     key = ' ';
-    input_str = '';
+    input_str = default;
     while strcmp(key, 'return') ~= 1 && strcmp(key, 'escape') ~= 1
         key = getKey(sge);
         if length(key) == 1
@@ -128,7 +180,7 @@ function input_str = getInput(sge, screen, prompt, width)
         printTextBox(sge, screen, [prompt ': ' input_str], width);
     end
     if strcmp(key, 'escape')
-        input_str = '';
+        input_str = default;
     end
 end
 
@@ -385,8 +437,11 @@ function header = buildHeader(width, row_1_buttons, row_2_buttons)
     header(2, 1:width) = buildButtonHeader(width, row_1_buttons);
     header(4, 1:width) = buildButtonHeader(width, row_2_buttons);
 
-    header(2, end - length('^   |') + 1:end) = '^   |';
-    header(4, end - length('< v > |') + 1:end) = '< v > |';
+    % TODO - update below when scrolling is added
+    header(2, end - length(' |') + 1:end) = ' |';
+    header(4, end - length(' |') + 1:end) = ' |';
+    %header(2, end - length('^   |') + 1:end) = '^   |';
+    %header(4, end - length('< v > |') + 1:end) = '< v > |';
 end
 
 function button_header = buildButtonHeader(width, buttons)

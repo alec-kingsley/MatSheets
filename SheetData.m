@@ -48,7 +48,7 @@ classdef SheetData < handle
             %   2. col index to set
             %   3. value to set cell to
 
-            num = str2double(obj.data{row, col});
+            num = str2double(value);
             if ~isnan(num)
                 obj.data{row, col} = num;
             else
