@@ -79,6 +79,9 @@ while ~exit_clicked
         else
             fprintf("Cell clicked: %c%d\n", 'A' + cell_col - 1, cell_row);
             old_value = DATA.getCellValue(cell_row, cell_col);
+            if isnumeric(old_value)
+                old_value = num2str(old_value);
+            end
             input_str = getInput(SGE, screen, 'Value', old_value, WIDTH);
             DATA.setCellValue(cell_row, cell_col, input_str);
         end
@@ -530,7 +533,7 @@ function bar = getBar(code)
     BAR_TBL = 13;
     BAR_TRB = 14;
 
-    if strcmp(code, 'tb') == 1
+    if strcmp(code, 'tb') == 1 || strcmp(code, 't') == 1
         bar = BAR_TB;
     elseif strcmp(code, 'rl') == 1
         bar = BAR_RL;
