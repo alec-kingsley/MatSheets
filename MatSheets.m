@@ -32,14 +32,14 @@ screen = zeros(HEIGHT, WIDTH) + ' ';
 
 % create vertical borders
 for i=1:HEIGHT
-    screen(i, 1) = '|';
-    screen(i, 1 + ROW_LABEL_WIDTH + 1) = '|';
-    screen(i, WIDTH) = '|';
+    screen(i, 1) = 0;
+    screen(i, 1 + ROW_LABEL_WIDTH + 1) = 0;
+    screen(i, WIDTH) = 0;
 end
 
 % create bottom border
 for i=1:WIDTH
-    screen(HEIGHT, i) = '-';
+    screen(HEIGHT, i) = 0;
 end
 
 TOP_LEFT_Y_POS = HEADER_HEIGHT + 3;
@@ -56,8 +56,6 @@ screen(HEADER_HEIGHT + 1:HEADER_HEIGHT + 2, ...
        1 + ROW_LABEL_WIDTH + 2:WIDTH - 1) ...
     = buildColLabels(COL_CT, CELL_WIDTH);
 
-SGE.drawScene(screen);
-
 % for scrolling capabilities
 top_left_row = 1;
 top_left_col = 1;
@@ -66,6 +64,7 @@ exit_clicked = false;
 while ~exit_clicked
     screen(TOP_LEFT_Y_POS:HEIGHT, TOP_LEFT_X_POS:WIDTH) ...
         = buildCells(ROW_CT, COL_CT, CELL_WIDTH, 1, 1, DATA);
+    screen = buildBorders(screen, HEIGHT, WIDTH);
     SGE.drawScene(screen);
     [row, col, button] = SGE.getMouseInput();
     button_clicked = getHeaderButton(row, col, ROW_1_BUTTONS, ...
@@ -193,9 +192,11 @@ function printTextBox(sge, screen, contents, width)
     %   3. the contents to print
     %   4. the width of the screen
 
-    screen(3, 1) = '|';
+    TEXT_BOX_HEIGHT = 5;
+
+    screen(3, 1) = 0;
     screen(3, 2) = ' ';
-    screen(3, width) = '|';
+    screen(3, width) = 0;
     screen(3, width - 1) = ' ';
 
     contents_idx = 1;
@@ -210,6 +211,7 @@ function printTextBox(sge, screen, contents, width)
             end
         end
     end
+    screen = buildBorders(screen, TEXT_BOX_HEIGHT, width);
     sge.drawScene(screen);
 end
 
@@ -296,7 +298,7 @@ function button = getHeaderButton(row, col, row_1_buttons, row_2_buttons)
         row_buttons = {};
     end
     
-    i = length('| ') + 1;
+    i = length([0 ' ']) + 1;
     for row_button=row_buttons
         for c=row_button{1}
             if i == col
@@ -304,7 +306,7 @@ function button = getHeaderButton(row, col, row_1_buttons, row_2_buttons)
             end
             i = i + 1;
         end
-        i = i + length(' | ');
+        i = i + length([' ' 0 ' ']);
     end
 end
 
@@ -337,7 +339,7 @@ function col_labels = buildColLabels(col_ct, cell_width)
     end
 
     for i=1:width
-        col_labels(2, i) = '-';
+        col_labels(2, i) = 0;
     end
 end
 
@@ -401,18 +403,18 @@ function cells = buildCellBorders(row_ct, col_ct, cell_width)
     cells = zeros(height, width) + ' ';
     for i=1:row_ct
         for j=1:width-1
-            cells(2 * i, j) = '-';
+            cells(2 * i, j) = 0;
         end
         if i == row_ct
-            cells(2 * i, width) = '-';
+            cells(2 * i, width) = 0;
         else
-            cells(2 * i, width) = '|';
+            cells(2 * i, width) = 0;
         end
     end
 
     for i=1:row_ct
         for j=1:col_ct
-            cells(2 * i - 1, j * (cell_width + 1)) = '|';
+            cells(2 * i - 1, j * (cell_width + 1)) = 0;
         end
     end
 end
@@ -429,17 +431,17 @@ function header = buildHeader(width, row_1_buttons, row_2_buttons)
 
     header = zeros(5, width) + ' ';
     for i=1:width
-        header(1, i) = '-';
-        header(3, i) = '-';
-        header(5, i) = '-';
+        header(1, i) = 0;
+        header(3, i) = 0;
+        header(5, i) = 0;
     end
 
     header(2, 1:width) = buildButtonHeader(width, row_1_buttons);
     header(4, 1:width) = buildButtonHeader(width, row_2_buttons);
 
     % TODO - update below when scrolling is added
-    header(2, end - length(' |') + 1:end) = ' |';
-    header(4, end - length(' |') + 1:end) = ' |';
+    header(2, end - length([' ' 0]) + 1:end) = [' ' 0];
+    header(4, end - length([' ' 0]) + 1:end) = [' ' 0];
     %header(2, end - length('^   |') + 1:end) = '^   |';
     %header(4, end - length('< v > |') + 1:end) = '< v > |';
 end
@@ -454,14 +456,128 @@ function button_header = buildButtonHeader(width, buttons)
     %   button_header - button header character array
 
     button_header = zeros(1, width) + ' ';
-    button_header(1:2) = '| ';
-    i = length('| ') + 1;
+    button_header(1:2) = [0 ' '];
+    i = length([0 ' ']) + 1;
     for button=buttons
         for c=button{1}
             button_header(i) = c;
             i = i + 1;
         end
-        button_header(i:i+length(' | ')-1) = ' | ';
-        i = i + length(' | ');
+        button_header(i:i+length([' ' 0 ' '])-1) = [' ' 0 ' '];
+        i = i + length([' ' 0 ' ']);
     end
+end
+
+function screen = buildBorders(old_screen, height, width)
+    % Consider all `0`s to be a border, and replace them with border
+    % sprites.
+    %
+    % Input:
+    %   1. the original screen
+    %   2. width of the screen
+    %   3. height of the screen
+    %
+    % Output:
+    %   screen - the updated screen
+
+    screen = old_screen;
+
+    for row=1:height
+        for col=1:width
+            if isBorder(old_screen(row, col))
+                code = '';
+                if row > 1 && isBorder(old_screen(row - 1, col))
+                    code = [code 't'];
+                end
+                if col < width && isBorder(old_screen(row, col + 1))
+                    code = [code 'r'];
+                end
+                if row < height && isBorder(old_screen(row + 1, col))
+                    code = [code 'b'];
+                end
+                if col > 1 && isBorder(old_screen(row, col - 1))
+                    code = [code 'l'];
+                end
+                screen(row, col) = getBar(code);
+            end
+        end
+    end
+
+end
+
+function bar = getBar(code)
+    % Get the sprite ID for a bar based on a code.
+    % The code contains lowercase letters for the sides it touches,
+    % as follows:
+    % (t)op, (r)ight, (b)ottom, (l)eft in that order
+    %
+    % Input:
+    %   1. the code to input
+    % Output:
+    %   bar - the sprite ID
+
+    assert(~isempty(code))
+
+    BAR_TB = 3;
+    BAR_RL = 4;
+    BAR_TRBL = 5;
+    BAR_TL = 6;
+    BAR_BL = 7;
+    BAR_RB = 8;
+    BAR_TR = 9;
+    BAR_RBL = 10;
+    BAR_TRL = 11;
+    BAR_TBL = 13;
+    BAR_TRB = 14;
+
+    if strcmp(code, 'tb') == 1
+        bar = BAR_TB;
+    elseif strcmp(code, 'rl') == 1
+        bar = BAR_RL;
+    elseif strcmp(code, 'trbl') == 1
+        bar = BAR_TRBL;
+    elseif strcmp(code, 'tl') == 1
+        bar = BAR_TL;
+    elseif strcmp(code, 'bl') == 1
+        bar = BAR_BL;
+    elseif strcmp(code, 'rb') == 1
+        bar = BAR_RB;
+    elseif strcmp(code, 'tr') == 1
+        bar = BAR_TR;
+    elseif strcmp(code, 'rbl') == 1
+        bar = BAR_RBL;
+    elseif strcmp(code, 'trl') == 1
+        bar = BAR_TRL;
+    elseif strcmp(code, 'tbl') == 1
+        bar = BAR_TBL;
+    elseif strcmp(code, 'trb') == 1
+        bar = BAR_TRB;
+    end
+end
+
+function is_border = isBorder(char)
+    % Determine if a character represents a border.
+    % All border sprites are borders, as well as `0`.
+    %
+    % Input:
+    %   1. the character to test
+    % Output:
+    %   is_border - true iff `char` is a border
+    
+    BAR_TB = 3;
+    BAR_RL = 4;
+    BAR_TRBL = 5;
+    BAR_TL = 6;
+    BAR_BL = 7;
+    BAR_RB = 8;
+    BAR_TR = 9;
+    BAR_RBL = 10;
+    BAR_TRL = 11;
+    BAR_TBL = 13;
+    BAR_TRB = 14;
+
+    is_border = char == 0 || char == BAR_TB || char == BAR_RL ...
+             || char == BAR_TRBL || char == BAR_TL || char == BAR_BL ...
+             || char == BAR_RB || char == BAR_TR || char == BAR_RBL ...
+             || char == BAR_TRL || char == BAR_TBL || char == BAR_TRB;
 end
