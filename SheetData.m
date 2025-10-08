@@ -10,6 +10,8 @@ classdef SheetData < handle
 
         function reset(obj)
             % Reset the data in the sheet.
+            %
+            % Input: SheetData object
 
             obj.data = {};
         end
@@ -18,7 +20,8 @@ classdef SheetData < handle
             % Load the data from a csv file.
             %
             % Input:
-            %   1. name of csv file
+            %   1. SheetData object
+            %   2. name of csv file
 
             obj.data = readmatrix(csv_name, 'OutputType', 'char');
             for i=1:size(obj.data, 1)
@@ -35,7 +38,8 @@ classdef SheetData < handle
             % Write data to a csv file.
             %
             % Input:
-            %   1. name of csv file
+            %   1. SheetData object
+            %   2. name of csv file
 
             writecell(obj.data, csv_name)
         end
@@ -44,9 +48,10 @@ classdef SheetData < handle
             % Set the contents of a cell.
             % 
             % Input:
-            %   1. row index to set
-            %   2. col index to set
-            %   3. value to set cell to
+            %   1. SheetData object
+            %   2. row index to set
+            %   3. col index to set
+            %   4. value to set cell to
 
             num = str2double(value);
             if ~isnan(num)
@@ -60,8 +65,9 @@ classdef SheetData < handle
             % Get the contents of a cell.
             %
             % Input:
-            %   1. row index to get
-            %   2. col index to get
+            %   1. SheetData object
+            %   2. row index to get
+            %   3. col index to get
             % Output:
             %   cell_value - value of cell
 
@@ -79,9 +85,10 @@ classdef SheetData < handle
             % Get the displayed contents of a single cell.
             % 
             % Input:
-            %   1. row index to sample.
-            %   2. column index to sample.
-            %   3. width of the interior of a cell
+            %   1. SheetData object
+            %   2. row index to sample.
+            %   3. column index to sample.
+            %   4. width of the interior of a cell
             % Output:
             %   cell_str - character array representing cell contents
 
