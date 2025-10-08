@@ -75,9 +75,7 @@ while ~exit_clicked
                                           TOP_LEFT_X_POS, CELL_WIDTH);
 
         if cell_row == 0 && cell_col == 0
-            fprintf("Click target unknown.\n");
         else
-            fprintf("Cell clicked: %c%d\n", 'A' + cell_col - 1, cell_row);
             old_value = DATA.getCellValue(cell_row, cell_col);
             if isnumeric(old_value)
                 old_value = num2str(old_value);
@@ -87,7 +85,6 @@ while ~exit_clicked
         end
 
     else
-        fprintf("Button clicked: %s\n", button_clicked)
         if strcmp(button_clicked, 'Exit') == 1
             exit_clicked = true;
             close(SGE.my_figure);
