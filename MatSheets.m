@@ -45,45 +45,83 @@ end
 TOP_LEFT_Y_POS = HEADER_HEIGHT + 3;
 TOP_LEFT_X_POS = ROW_LABEL_WIDTH + 3;
 
+% for scrolling capabilities
+top_left_row = 1;
+top_left_col = 1;
+
 % design screen
 screen(1:HEADER_HEIGHT, 1:WIDTH) ...
     = buildHeader(WIDTH, ROW_1_BUTTONS, ROW_2_BUTTONS);
 screen(TOP_LEFT_Y_POS:HEIGHT, TOP_LEFT_X_POS:WIDTH) ...
     = buildCellBorders(ROW_CT, COL_CT, CELL_WIDTH);
 screen(HEADER_HEIGHT + 2:HEIGHT - 1, 2:2 + ROW_LABEL_WIDTH - 1) ...
-    = buildRowLabels(ROW_CT, ROW_LABEL_WIDTH);
+    = buildRowLabels(ROW_CT, ROW_LABEL_WIDTH, top_left_row);
 screen(HEADER_HEIGHT + 1:HEADER_HEIGHT + 2, ...
        1 + ROW_LABEL_WIDTH + 2:WIDTH - 1) ...
-    = buildColLabels(COL_CT, CELL_WIDTH);
-
-% for scrolling capabilities
-top_left_row = 1;
-top_left_col = 1;
+    = buildColLabels(COL_CT, CELL_WIDTH, top_left_col);
 
 exit_clicked = false;
 while ~exit_clicked
     screen(TOP_LEFT_Y_POS:HEIGHT, TOP_LEFT_X_POS:WIDTH) ...
-        = buildCells(ROW_CT, COL_CT, CELL_WIDTH, 1, 1, DATA);
+        = buildCells(ROW_CT, COL_CT, CELL_WIDTH, ...
+                     top_left_row, top_left_col, DATA);
     screen = buildBorders(screen, HEIGHT, WIDTH);
     SGE.drawScene(screen);
     [row, col, button] = SGE.getMouseInput();
     button_clicked = getHeaderButton(row, col, ROW_1_BUTTONS, ...
                                        ROW_2_BUTTONS);
     if isempty(button_clicked)
-        % test if it's a cell
-        [cell_row, cell_col] = getCellPos(row, col, TOP_LEFT_Y_POS, ...
-                                          TOP_LEFT_X_POS, CELL_WIDTH);
-
-        if cell_row == 0 && cell_col == 0
-        else
-            old_value = DATA.getCellValue(cell_row, cell_col);
-            if isnumeric(old_value)
-                old_value = num2str(old_value);
+        if row <= HEADER_HEIGHT
+            % test if it's a directional
+            dir = '';
+            if row == 2 && col == WIDTH - 4
+                % up
+                if top_left_row > 1
+                    top_left_row = top_left_row - 1;
+                    screen(HEADER_HEIGHT + 2:HEIGHT - 1, ...
+                           2:2 + ROW_LABEL_WIDTH - 1) ...
+                        = buildRowLabels(ROW_CT, ROW_LABEL_WIDTH, ...
+                                         top_left_row);
+                end
+            elseif row ==  4 && col == WIDTH - 6
+                % left
+                if top_left_col > 1
+                    top_left_col = top_left_col - 1;
+                    screen(HEADER_HEIGHT + 1:HEADER_HEIGHT + 2, ...
+                           1 + ROW_LABEL_WIDTH + 2:WIDTH - 1) ...
+                        = buildColLabels(COL_CT, CELL_WIDTH, ...
+                                         top_left_col);
+                end
+            elseif row ==  4 && col == WIDTH - 4
+                % down
+                top_left_row = top_left_row + 1;
+                screen(HEADER_HEIGHT + 2:HEIGHT - 1, ...
+                       2:2 + ROW_LABEL_WIDTH - 1) ...
+                    = buildRowLabels(ROW_CT, ROW_LABEL_WIDTH, ...
+                                     top_left_row);
+            elseif row ==  4 && col == WIDTH - 2
+                % right
+                top_left_col = top_left_col + 1;
+                screen(HEADER_HEIGHT + 1:HEADER_HEIGHT + 2, ...
+                       1 + ROW_LABEL_WIDTH + 2:WIDTH - 1) ...
+                    = buildColLabels(COL_CT, CELL_WIDTH, top_left_col);
             end
-            input_str = getInput(SGE, screen, 'Value', old_value, WIDTH);
-            DATA.setCellValue(cell_row, cell_col, input_str);
-        end
+        else
+            % test if it's a cell
+            [cell_row, cell_col] = getCellPos(row, col, TOP_LEFT_Y_POS, ...
+                                              TOP_LEFT_X_POS, CELL_WIDTH);
 
+            if cell_row ~= 0 && cell_col ~= 0
+                cell_row = cell_row + top_left_row - 1;
+                cell_col = cell_col + top_left_col - 1;
+                old_value = DATA.getCellValue(cell_row, cell_col);
+                if isnumeric(old_value)
+                    old_value = num2str(old_value);
+                end
+                input_str = getInput(SGE, screen, 'Value', old_value, WIDTH);
+                DATA.setCellValue(cell_row, cell_col, input_str);
+            end
+        end
     else
         if strcmp(button_clicked, 'Exit') == 1
             exit_clicked = true;
@@ -310,32 +348,27 @@ function button = getHeaderButton(row, col, row_1_buttons, row_2_buttons)
     end
 end
 
-function col_labels = buildColLabels(col_ct, cell_width)
+function col_labels = buildColLabels(col_ct, cell_width, top_left_col)
     % Build labels for columns.
     % 
     % Input:
     %   1. # of columns
     %   2. width of the interior of a cell
+    %   3. col index of top left column
     % Output:
     %   col_labels - labels for columns with a row below underlining it
-    %
-    % TODO - this function should be updated to be able to start from
-    % a specific cell column index.
 
     width = col_ct * (cell_width + 1)  - 1;
     col_labels = zeros(2, width) + ' ';
 
-    if col_ct > 26
-        fprintf("ERROR: Columns > 26 not supported\n")
-        quit(1)
-    end
-
-    col_label = 'A';
-    for col=1:col_ct
-        col_labels(1, (col - 1) * (cell_width + 1) ...
-                      + ceil(cell_width / 2)) ...
+    col = top_left_col;
+    for col_off=1:col_ct
+        col_label = colToLabel(col);
+        label_start = (col_off - 1) * (cell_width + 1) ...
+                      + ceil(cell_width / 2 - length(col_label) / 2) + 1;
+        col_labels(1, label_start:label_start + length(col_label) - 1) ...
             = col_label;
-        col_label = col_label + 1;
+        col = col + 1;
     end
 
     for i=1:width
@@ -343,22 +376,37 @@ function col_labels = buildColLabels(col_ct, cell_width)
     end
 end
 
-function row_labels = buildRowLabels(row_ct, row_label_width)
+function col_label = colToLabel(col)
+    % Get column label from a col.
+    % 
+    % Input:
+    %   1. column index to convert
+    % Output:
+    %   col_label - label of column
+
+    col_label = '';
+    while col > 0
+        col_label = [('A' + mod(col - 1, 26)) col_label];
+        col = floor((col - 1) / 26);
+    end
+    
+end
+
+function row_labels = buildRowLabels(row_ct, row_label_width, top_left_row)
     % Build labels for rows.
     % 
     % Input:
     %   1. # of rows
     %   2. width to allocate for a row label
+    %   3. row idx of top left row
     % Output:
     %   row_labels - labels for rows
-    %
-    % TODO - this function should be updated to be able to start from
-    % a specific cell row index.
 
     row_labels = zeros(row_ct * 2, row_label_width) + ' ';
     fmt = sprintf('%%%dd', row_label_width);
-    for row=1:row_ct
-        row_labels(row * 2,1:row_label_width) = sprintf(fmt, row);
+    for row_off=1:row_ct
+        row_labels(row_off * 2,1:row_label_width) ...
+            = sprintf(fmt, top_left_row + row_off - 1);
     end
 end
 
@@ -439,11 +487,8 @@ function header = buildHeader(width, row_1_buttons, row_2_buttons)
     header(2, 1:width) = buildButtonHeader(width, row_1_buttons);
     header(4, 1:width) = buildButtonHeader(width, row_2_buttons);
 
-    % TODO - update below when scrolling is added
-    header(2, end - length([' ' 0]) + 1:end) = [' ' 0];
-    header(4, end - length([' ' 0]) + 1:end) = [' ' 0];
-    %header(2, end - length('^   |') + 1:end) = '^   |';
-    %header(4, end - length('< v > |') + 1:end) = '< v > |';
+    header(2, end - length(['^   ' 0]) + 1:end) = ['^   ' 0];
+    header(4, end - length(['< v > ' 0]) + 1:end) = ['< v > ' 0];
 end
 
 function button_header = buildButtonHeader(width, buttons)
