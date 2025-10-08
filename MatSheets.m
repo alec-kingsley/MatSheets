@@ -6,8 +6,9 @@ close all
 SPRITE_HEIGHT_PX = 16;
 SPRITE_WIDTH_PX = 12;
 SCALE = 1;
+BACKGROUND_COLOR = [10, 50, 10];
 SGE = simpleGameEngine("ascii-shrunk.png", SPRITE_HEIGHT_PX, ...
-                       SPRITE_WIDTH_PX, SCALE); 
+                       SPRITE_WIDTH_PX, SCALE, BACKGROUND_COLOR); 
 
 % initialize sheet data
 DATA = SheetData();
