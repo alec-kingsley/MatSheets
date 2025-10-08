@@ -11,3 +11,5 @@ Any cell can be edited by clicking the cell and typing in a new value. Hitting t
 The `Copy` and `Paste` buttons must be clicked before clicking a desired cell to either copy it or paste to it from the system clipboard.
 
 `Save As` and `Load` each work with `.csv` files. `New` will erase all progress.
+
+The spreadsheet may be "scrolled" using the arrow buttons at the top right of the screen.
