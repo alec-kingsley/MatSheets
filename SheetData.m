@@ -68,6 +68,9 @@ classdef SheetData < handle
 
             if row <= size(obj.data, 1) && col <= size(obj.data, 2)
                 cell_value = obj.data{row, col};
+                if ismissing(cell_value)
+                    cell_value = '';
+                end
             else
                 cell_value = '';
             end
