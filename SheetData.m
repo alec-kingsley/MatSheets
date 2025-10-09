@@ -23,7 +23,9 @@ classdef SheetData < handle
             %   1. SheetData object
             %   2. name of csv file
 
-            obj.data = readcell(csv_name);
+            % force empty lines to be read
+            opts = delimitedTextImportOptions("EmptyLineRule", 'read');
+            obj.data = readcell(csv_name, opts);
         end
 
         function toCSV(obj, csv_name)
