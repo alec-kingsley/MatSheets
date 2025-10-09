@@ -23,15 +23,7 @@ classdef SheetData < handle
             %   1. SheetData object
             %   2. name of csv file
 
-            obj.data = readmatrix(csv_name, 'OutputType', 'char');
-            for i=1:size(obj.data, 1)
-                for j=1:size(obj.data, 2)
-                    num = str2double(obj.data{i, j});
-                    if ~isnan(num)
-                        obj.data{i, j} = num;
-                    end
-                end
-            end
+            obj.data = readcell(csv_name);
         end
 
         function toCSV(obj, csv_name)
