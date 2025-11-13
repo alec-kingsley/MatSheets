@@ -29,6 +29,7 @@ ROW_2_BUTTONS = {'Copy','Paste'};
 HEIGHT = ROW_CT * 2 + 7;
 WIDTH = COL_CT * (CELL_WIDTH + 1) + ROW_LABEL_WIDTH + 2;
 
+% initialize blank screen
 screen = zeros(HEIGHT, WIDTH) + ' ';
 
 % create vertical borders
@@ -61,6 +62,20 @@ screen(HEADER_HEIGHT + 1:HEADER_HEIGHT + 2, ...
        1 + ROW_LABEL_WIDTH + 2:WIDTH - 1) ...
     = buildColLabels(COL_CT, CELL_WIDTH, top_left_col);
 
+% arrow locations
+UP_ARROW_ROW = 2;
+UP_ARROW_COL = WIDTH - 4;
+
+LEFT_ARROW_ROW = 4;
+LEFT_ARROW_COL = WIDTH - 6;
+
+DOWN_ARROW_ROW = 4;
+DOWN_ARROW_COL = WIDTH - 4;
+
+RIGHT_ARROW_ROW = 4;
+RIGHT_ARROW_COL = WIDTH - 2;
+
+% main loop
 exit_clicked = false;
 while ~exit_clicked
     screen(TOP_LEFT_Y_POS:HEIGHT, TOP_LEFT_X_POS:WIDTH) ...
@@ -73,9 +88,8 @@ while ~exit_clicked
                                        ROW_2_BUTTONS);
     if isempty(button_clicked)
         if row <= HEADER_HEIGHT
-            % test if it's a directional
-            dir = '';
-            if row == 2 && col == WIDTH - 4
+            % test if it's an arrow
+            if row == UP_ARROW_ROW && col == UP_ARROW_COL
                 % up
                 if top_left_row > 1
                     top_left_row = top_left_row - 1;
@@ -84,7 +98,7 @@ while ~exit_clicked
                         = buildRowLabels(ROW_CT, ROW_LABEL_WIDTH, ...
                                          top_left_row);
                 end
-            elseif row ==  4 && col == WIDTH - 6
+            elseif row == LEFT_ARROW_ROW && col == LEFT_ARROW_COL
                 % left
                 if top_left_col > 1
                     top_left_col = top_left_col - 1;
@@ -93,14 +107,14 @@ while ~exit_clicked
                         = buildColLabels(COL_CT, CELL_WIDTH, ...
                                          top_left_col);
                 end
-            elseif row ==  4 && col == WIDTH - 4
+            elseif row == DOWN_ARROW_ROW && col == DOWN_ARROW_COL
                 % down
                 top_left_row = top_left_row + 1;
                 screen(HEADER_HEIGHT + 2:HEIGHT - 1, ...
                        2:2 + ROW_LABEL_WIDTH - 1) ...
                     = buildRowLabels(ROW_CT, ROW_LABEL_WIDTH, ...
                                      top_left_row);
-            elseif row ==  4 && col == WIDTH - 2
+            elseif row == RIGHT_ARROW_ROW && col == RIGHT_ARROW_COL
                 % right
                 top_left_col = top_left_col + 1;
                 screen(HEADER_HEIGHT + 1:HEADER_HEIGHT + 2, ...
@@ -157,7 +171,6 @@ while ~exit_clicked
                                               TOP_LEFT_X_POS, CELL_WIDTH);
             DATA.setCellValue(cell_row, cell_col, clipboard('paste'));
         end
-
     end
 end
 
@@ -170,6 +183,9 @@ function [cell_row, cell_col] = selectCell(sge, top_left_y_pos, ...
     %   2. the y offset of the top left character
     %   3. the x offset of the top left character
     %   4. the width of a cell
+    % Output:
+    %   cell_row - row of the cell selected
+    %   cell_col - column of the cell selected
 
     cell_row = 0;
     cell_col = 0;
@@ -190,6 +206,9 @@ function [cell_row, cell_col] = getCellPos(row, col, top_left_y_pos, ...
     %   3. the y offset of the top left character
     %   4. the x offset of the top left character
     %   5. the width of a cell
+    % Output:
+    %   cell_row - row of the cell at cursor position
+    %   cell_col - column of the cell at cursor position
                                          
     cell_row = 0;
     cell_col = 0;
@@ -213,6 +232,8 @@ function input_str = getInput(sge, screen, prompt, default, width)
     %   2. the previous screen
     %   3. the prompt to give the user
     %   4. the width of the screen
+    % Output:
+    %   input_str - character array user gave as input
 
     printTextBox(sge, screen, [prompt ': ' default], width);
     key = ' ';
@@ -268,6 +289,8 @@ function key = getKey(sge)
     %
     % Input:
     %   1. the SGE object
+    % Output:
+    %   key - the key the user pressed as a character
 
     SYMBOL_NAMES = {'space', 'comma', 'period', 'semicolon', 'quote',...
         'slash', 'hyphen', 'leftbracket', 'rightbracket', 'equal',...
@@ -527,7 +550,6 @@ function screen = buildBorders(old_screen, height, width)
     %   1. the original screen
     %   2. width of the screen
     %   3. height of the screen
-    %
     % Output:
     %   screen - the updated screen
 
@@ -554,6 +576,24 @@ function screen = buildBorders(old_screen, height, width)
         end
     end
 
+end
+
+function is_border = isBorder(char)
+    % Determine if a character represents a border.
+    % All border sprites are borders, as well as `0`.
+    %
+    % Input:
+    %   1. the character to test
+    % Output:
+    %   is_border - true iff `char` is a border
+
+    BORDER_VALUES = [0, ...
+        getBar('tb'), getBar('rl'), getBar('trbl'), getBar('tl'), ...
+        getBar('bl'), getBar('rb'), getBar('tr'), getBar('rbl'), ...
+        getBar('trl'), getBar('tbl'), getBar('trb') ...
+    ];
+
+    is_border = ismember(char, BORDER_VALUES);
 end
 
 function bar = getBar(code)
@@ -606,29 +646,3 @@ function bar = getBar(code)
     end
 end
 
-function is_border = isBorder(char)
-    % Determine if a character represents a border.
-    % All border sprites are borders, as well as `0`.
-    %
-    % Input:
-    %   1. the character to test
-    % Output:
-    %   is_border - true iff `char` is a border
-    
-    BAR_TB = 3;
-    BAR_RL = 4;
-    BAR_TRBL = 5;
-    BAR_TL = 6;
-    BAR_BL = 7;
-    BAR_RB = 8;
-    BAR_TR = 9;
-    BAR_RBL = 10;
-    BAR_TRL = 11;
-    BAR_TBL = 13;
-    BAR_TRB = 14;
-
-    is_border = char == 0 || char == BAR_TB || char == BAR_RL ...
-             || char == BAR_TRBL || char == BAR_TL || char == BAR_BL ...
-             || char == BAR_RB || char == BAR_TR || char == BAR_RBL ...
-             || char == BAR_TRL || char == BAR_TBL || char == BAR_TRB;
-end
