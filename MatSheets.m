@@ -418,7 +418,6 @@ function col_label = colToLabel(col)
         col_label = [('A' + mod(col - 1, 26)) col_label];
         col = floor((col - 1) / 26);
     end
-    
 end
 
 function row_labels = buildRowLabels(row_ct, row_label_width, top_left_row)
@@ -462,7 +461,6 @@ function cells = buildCells(row_ct, col_ct, cell_width, ...
                 = data.getCellStr(row_idx, col_idx, cell_width);
         end
     end
-
 end
 
 function cells = buildCellBorders(row_ct, col_ct, cell_width)
@@ -477,19 +475,19 @@ function cells = buildCellBorders(row_ct, col_ct, cell_width)
 
     height = row_ct * 2;
     width = col_ct * (cell_width + 1);
+
+    % initialize cells to be blank
     cells = zeros(height, width) + ' ';
+
     for i=1:row_ct
-        for j=1:width-1
+        % place border underneath cells in row
+        for j=1:width
             cells(2 * i, j) = 0;
-        end
-        if i == row_ct
-            cells(2 * i, width) = 0;
-        else
-            cells(2 * i, width) = 0;
         end
     end
 
     for i=1:row_ct
+        % place border to the right of each cell
         for j=1:col_ct
             cells(2 * i - 1, j * (cell_width + 1)) = 0;
         end
@@ -513,9 +511,11 @@ function header = buildHeader(width, row_1_buttons, row_2_buttons)
         header(5, i) = 0;
     end
 
+    % place named buttons
     header(2, 1:width) = buildButtonHeader(width, row_1_buttons);
     header(4, 1:width) = buildButtonHeader(width, row_2_buttons);
 
+    % add arrow keys
     header(2, end - length(['^   ' 0]) + 1:end) = ['^   ' 0];
     header(4, end - length(['< v > ' 0]) + 1:end) = ['< v > ' 0];
 end
@@ -575,7 +575,6 @@ function screen = buildBorders(old_screen, height, width)
             end
         end
     end
-
 end
 
 function is_border = isBorder(char)
