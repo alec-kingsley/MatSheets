@@ -83,7 +83,7 @@ while ~exit_clicked
                      top_left_row, top_left_col, DATA);
     screen = buildBorders(screen, HEIGHT, WIDTH);
     SGE.drawScene(screen);
-    [row, col, button] = SGE.getMouseInput();
+    [row, col, ~] = SGE.getMouseInput();
     button_clicked = getHeaderButton(row, col, ROW_1_BUTTONS, ...
                                        ROW_2_BUTTONS);
     if isempty(button_clicked)
@@ -190,7 +190,7 @@ function [cell_row, cell_col] = selectCell(sge, top_left_y_pos, ...
     cell_row = 0;
     cell_col = 0;
     while cell_row == 0 && cell_col == 0
-        [row, col, button] = sge.getMouseInput();
+        [row, col, ~] = sge.getMouseInput();
         [cell_row, cell_col] = getCellPos(row, col, top_left_y_pos, ...
                                           top_left_x_pos, cell_width);
     end
